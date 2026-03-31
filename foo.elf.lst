@@ -4,71 +4,168 @@ foo.elf:     file format elf32-littlearm
 
 Disassembly of section .text:
 
-00000000 <vector_table>:
-   0:	20001000 	andcs	r1, r0, r0
-   4:	000001d1 	ldrdeq	r0, [r0], -r1
+08000000 <vector_table>:
+ 8000000:	20005000 	andcs	r5, r0, r0
+ 8000004:	080001d1 	stmdaeq	r0, {r0, r4, r6, r7, r8}
 	...
-  3c:	000001eb 	andeq	r0, r0, fp, ror #3
+ 800003c:	0800022d 	stmdaeq	r0, {r0, r2, r3, r5, r9}
 	...
 
-000001d0 <reset_handler>:
+080001d0 <reset_handler>:
 
     .section .text
     .align 1
     .type reset_handler, %function
 reset_handler:
     ldr r0, =SYST_CSR
- 1d0:	4807      	ldr	r0, [pc, #28]	; (1f0 <break_here+0x4>)
+ 80001d0:	481a      	ldr	r0, [pc, #104]	; (800023c <break_here+0x2>)
     ldr r1, =SYST_RVR
- 1d2:	4908      	ldr	r1, [pc, #32]	; (1f4 <break_here+0x8>)
+ 80001d2:	491b      	ldr	r1, [pc, #108]	; (8000240 <break_here+0x6>)
     ldr r2, =SYST_CVR
- 1d4:	4a08      	ldr	r2, [pc, #32]	; (1f8 <break_here+0xc>)
+ 80001d4:	4a1b      	ldr	r2, [pc, #108]	; (8000244 <break_here+0xa>)
     ldr r3, =SYST_TIMEOUT // r3 is temp variable
- 1d6:	f04f 03ff 	mov.w	r3, #255	; 0xff
+ 80001d6:	f06f 437f 	mvn.w	r3, #4278190080	; 0xff000000
 
     // initially reload with 0x00FFFFFF, treat this as threshold register
     str r3, [r1]
- 1da:	600b      	str	r3, [r1, #0]
+ 80001da:	600b      	str	r3, [r1, #0]
 
     // load 0 to systick counter register; good practise as default initial value is unknown
     mov r3, #0x0 // write any value to SYST_CVR will reset it to 0
- 1dc:	2300      	movs	r3, #0
+ 80001dc:	2300      	movs	r3, #0
     str r3, [r2]
- 1de:	6013      	str	r3, [r2, #0]
+ 80001de:	6013      	str	r3, [r2, #0]
 
     // set ENABLE, TICKINT, and CLKSOURCE flags
     mov r3, #0x7 // 0b00000111
- 1e0:	2307      	movs	r3, #7
+ 80001e0:	2307      	movs	r3, #7
     str r3, [r0]
- 1e2:	6003      	str	r3, [r0, #0]
+ 80001e2:	6003      	str	r3, [r0, #0]
 
     mov r5, #0
- 1e4:	2500      	movs	r5, #0
+ 80001e4:	2500      	movs	r5, #0
+
+    // GPIO Config start
+    // RCC->APB2ENR i.e. - 0x40021018
+    ldr r0, =0x40021018     // Load the address 0x40021018 into R0
+ 80001e6:	4818      	ldr	r0, [pc, #96]	; (8000248 <break_here+0xe>)
+    ldr r1, [r0]            // Load the value at the address in R0 into R1
+ 80001e8:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1              // temp = 1 to be shifted
+ 80001ea:	2401      	movs	r4, #1
+    lsl r4, r4, #4          // r4 = r3 << 4 as IOPCEN = bit 4
+ 80001ec:	0124      	lsls	r4, r4, #4
+    orr r1, r1, r4          // R1 = R1 | 0x02
+ 80001ee:	4321      	orrs	r1, r4
+    str r1, [r0]            // Store modified register value to r0 i.e. - 0x40023830
+ 80001f0:	6001      	str	r1, [r0, #0]
+
+    // configure GPIOC_CRH for PC13
+    // set mode13 b1 = 1
+    ldr r0, =0x40011004
+ 80001f2:	4816      	ldr	r0, [pc, #88]	; (800024c <break_here+0x12>)
+    ldr r1, [r0]
+ 80001f4:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 80001f6:	2401      	movs	r4, #1
+    lsl r4, r4, #21
+ 80001f8:	0564      	lsls	r4, r4, #21
+    orr r1, r1, r4
+ 80001fa:	4321      	orrs	r1, r4
+    str r1, [r0]
+ 80001fc:	6001      	str	r1, [r0, #0]
+
+    // set mode13 b0 = 0
+    ldr r0, =0x40011004
+ 80001fe:	4813      	ldr	r0, [pc, #76]	; (800024c <break_here+0x12>)
+    ldr r1, [r0]
+ 8000200:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 8000202:	2401      	movs	r4, #1
+    lsl r4, r4, #20
+ 8000204:	0524      	lsls	r4, r4, #20
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 8000206:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4
+ 8000208:	4021      	ands	r1, r4
+    str r1, [r0]
+ 800020a:	6001      	str	r1, [r0, #0]
+
+    // set cnf13 b1 = 0
+    ldr r0, =0x40011004
+ 800020c:	480f      	ldr	r0, [pc, #60]	; (800024c <break_here+0x12>)
+    ldr r1, [r0]
+ 800020e:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 8000210:	2401      	movs	r4, #1
+    lsl r4, r4, #23
+ 8000212:	05e4      	lsls	r4, r4, #23
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 8000214:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4
+ 8000216:	4021      	ands	r1, r4
+    str r1, [r0]
+ 8000218:	6001      	str	r1, [r0, #0]
+
+    // set cnf13 b0 = 0
+    ldr r0, =0x40011004
+ 800021a:	480c      	ldr	r0, [pc, #48]	; (800024c <break_here+0x12>)
+    ldr r1, [r0]
+ 800021c:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 800021e:	2401      	movs	r4, #1
+    lsl r4, r4, #22
+ 8000220:	05a4      	lsls	r4, r4, #22
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 8000222:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4
+ 8000224:	4021      	ands	r1, r4
+    str r1, [r0]
+ 8000226:	6001      	str	r1, [r0, #0]
 
     bl .
- 1e6:	f7ff fffe 	bl	1e6 <reset_handler+0x16>
+ 8000228:	f7ff fffe 	bl	8000228 <reset_handler+0x58>
 
-000001ea <systick_handler>:
+0800022c <systick_handler>:
 
     .section .text
     .align 1 // 2^1
     .type systick_handler, %function
 systick_handler:
     add r5, r5, #1
- 1ea:	3501      	adds	r5, #1
+ 800022c:	3501      	adds	r5, #1
 
-000001ec <break_here>:
+    // GPIOC->ODR |= (1U << 13);  // 0x4001100C
+    ldr r0, =0x4001100C
+ 800022e:	4808      	ldr	r0, [pc, #32]	; (8000250 <break_here+0x16>)
+    ldr r1, [r0]
+ 8000230:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 8000232:	2401      	movs	r4, #1
+    lsl r4, r4, #13
+ 8000234:	0364      	lsls	r4, r4, #13
+    eor r1, r1, r4          // R1 = R1 ^ r4
+ 8000236:	4061      	eors	r1, r4
+    str r1, [r0]
+ 8000238:	6001      	str	r1, [r0, #0]
+
+0800023a <break_here>:
+
 break_here:
     bx lr
- 1ec:	4770      	bx	lr
- 1ee:	e0100000 	ands	r0, r0, r0
+ 800023a:	4770      	bx	lr
     ldr r0, =SYST_CSR
- 1f2:	e014e000 	ands	lr, r4, r0
+ 800023c:	e000e010 	and	lr, r0, r0, lsl r0
     ldr r1, =SYST_RVR
- 1f6:	e018e000 	ands	lr, r8, r0
+ 8000240:	e000e014 	and	lr, r0, r4, lsl r0
     ldr r2, =SYST_CVR
- 1fa:	Address 0x00000000000001fa is out of bounds.
-
+ 8000244:	e000e018 	and	lr, r0, r8, lsl r0
+    ldr r0, =0x40021018     // Load the address 0x40021018 into R0
+ 8000248:	40021018 	andmi	r1, r2, r8, lsl r0
+    ldr r0, =0x40011004
+ 800024c:	40011004 	andmi	r1, r1, r4
+    ldr r0, =0x4001100C
+ 8000250:	4001100c 	andmi	r1, r1, ip
 
 Disassembly of section .ARM.attributes:
 
@@ -87,7 +184,7 @@ Disassembly of section .ARM.attributes:
 Disassembly of section .debug_line:
 
 00000000 <.debug_line>:
-   0:	00000042 	andeq	r0, r0, r2, asr #32
+   0:	00000073 	andeq	r0, r0, r3, ror r0
    4:	001c0003 	andseq	r0, ip, r3
    8:	01020000 	mrseq	r0, (UNDEF: 2)
    c:	000d0efb 	strdeq	r0, [sp], -fp
@@ -98,13 +195,25 @@ Disassembly of section .debug_line:
   20:	00000053 	andeq	r0, r0, r3, asr r0
   24:	05000000 	streq	r0, [r0, #-0]
   28:	0001d002 	andeq	sp, r1, r2
-  2c:	01140300 	tsteq	r4, r0, lsl #6
+  2c:	01140308 	tsteq	r4, r8, lsl #6
   30:	31212121 			; <UNDEFINED> instruction: 0x31212121
   34:	21232123 			; <UNDEFINED> instruction: 0x21232123
-  38:	22342222 	eorscs	r2, r4, #536870914	; 0x20000002
-  3c:	2f2e6603 	svccs	0x002e6603
-  40:	0002022f 	andeq	r0, r2, pc, lsr #4
-  44:	Address 0x0000000000000044 is out of bounds.
+  38:	21212422 			; <UNDEFINED> instruction: 0x21212422
+  3c:	24212121 	strtcs	r2, [r1], #-289	; 0xfffffedf
+  40:	21212121 			; <UNDEFINED> instruction: 0x21212121
+  44:	21212321 			; <UNDEFINED> instruction: 0x21212321
+  48:	21212121 			; <UNDEFINED> instruction: 0x21212121
+  4c:	21212123 			; <UNDEFINED> instruction: 0x21212123
+  50:	23212121 			; <UNDEFINED> instruction: 0x23212121
+  54:	21212121 			; <UNDEFINED> instruction: 0x21212121
+  58:	34222121 	strtcc	r2, [r2], #-289	; 0xfffffedf
+  5c:	21212123 			; <UNDEFINED> instruction: 0x21212123
+  60:	03232121 			; <UNDEFINED> instruction: 0x03232121
+  64:	2f207fb0 	svccs	0x00207fb0
+  68:	2e12032f 	cdpcs	3, 1, cr0, cr2, cr15, {1}
+  6c:	032e0903 			; <UNDEFINED> instruction: 0x032e0903
+  70:	02022e2b 	andeq	r2, r2, #688	; 0x2b0
+  74:	Address 0x0000000000000074 is out of bounds.
 
 
 Disassembly of section .debug_info:
@@ -114,8 +223,8 @@ Disassembly of section .debug_info:
    4:	00000002 	andeq	r0, r0, r2
    8:	01040000 	mrseq	r0, (UNDEF: 4)
    c:	00000000 	andeq	r0, r0, r0
-  10:	000001d0 	ldrdeq	r0, [r0], -r0	; <UNPREDICTABLE>
-  14:	000001fc 	strdeq	r0, [r0], -ip
+  10:	080001d0 	stmdaeq	r0, {r4, r6, r7, r8}
+  14:	08000254 	stmdaeq	r0, {r2, r4, r6, r9}
   18:	00000000 	andeq	r0, r0, r0
   1c:	00000006 	andeq	r0, r0, r6
   20:	00000021 	andeq	r0, r0, r1, lsr #32
@@ -127,7 +236,7 @@ Disassembly of section .debug_abbrev:
 00000000 <.debug_abbrev>:
    0:	10001101 	andne	r1, r0, r1, lsl #2
    4:	12011106 	andne	r1, r1, #-2147483647	; 0x80000001
-   8:	1b0e0301 	blne	380c14 <break_here+0x380a28>
+   8:	1b0e0301 	blne	380c14 <SYST_TIMEOUT-0xc7f3eb>
    c:	130e250e 	movwne	r2, #58638	; 0xe50e
   10:	00000005 	andeq	r0, r0, r5
 
@@ -138,8 +247,8 @@ Disassembly of section .debug_aranges:
    4:	00000002 	andeq	r0, r0, r2
    8:	00040000 	andeq	r0, r4, r0
    c:	00000000 	andeq	r0, r0, r0
-  10:	000001d0 	ldrdeq	r0, [r0], -r0	; <UNPREDICTABLE>
-  14:	0000002c 	andeq	r0, r0, ip, lsr #32
+  10:	080001d0 	stmdaeq	r0, {r4, r6, r7, r8}
+  14:	00000084 	andeq	r0, r0, r4, lsl #1
 	...
 
 Disassembly of section .debug_str:
