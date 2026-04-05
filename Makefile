@@ -1,18 +1,33 @@
-PROJECT=foo
+PROJECT = foo
 CPU ?= cortex-m3
-BOARD ?= stm32vldiscovery
 
-qemu:
-	arm-none-eabi-as -mthumb -mcpu=$(CPU) -ggdb -c foo.S -o foo.o
-	arm-none-eabi-ld -Tmap.ld foo.o -o foo.elf
-	arm-none-eabi-objcopy -O binary $(PROJECT).elf foo.bin
-	arm-none-eabi-objdump -D -S foo.elf > foo.elf.lst
-	arm-none-eabi-readelf -a foo.elf > foo.elf.debug
-	@echo "To exit QUMU, press CTRL + A followed by X."
-	qemu-system-arm -S -M $(BOARD) -cpu $(CPU) -nographic -kernel $(PROJECT).elf -gdb tcp::1234
+AS = arm-none-eabi-as
+LD = arm-none-eabi-ld
+OBJDUMP = arm-none-eabi-objdump
+OBJCOPY = arm-none-eabi-objcopy
+READELF = arm-none-eabi-readelf
+GDB = C:/msys64/mingw64/bin/gdb-multiarch.exe
+
+build:
+	$(AS) -mthumb -mcpu=$(CPU) -g -c $(PROJECT).S -o $(PROJECT).o
+	$(LD) -Tmap.ld $(PROJECT).o -o $(PROJECT).elf
+	$(OBJDUMP) -D -S $(PROJECT).elf > $(PROJECT).elf.lst
+	$(READELF) -a $(PROJECT).elf > $(PROJECT).elf.debug
+	$(OBJCOPY) -O ihex $(PROJECT).elf $(PROJECT).hex
+	$(OBJCOPY) -O binary $(PROJECT).elf $(PROJECT).bin
 
 gdb:
-	gdb-multiarch -q $(PROJECT).elf -ex "target remote localhost:1234"
+# 	&"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8"
+
+	"$(GDB)" -q $(PROJECT).elf \
+		-ex "target extended-remote localhost:3333" \
+		-ex "monitor reset halt" \
+		-ex "load" \
+		-ex "monitor reset halt"
+
+flash:
+	openocd -f interface/stlink.cfg -f target/stm32f1x.cfg \
+		-c "program $(PROJECT).elf verify reset exit"
 
 clean:
-	rm -rf *.out *.elf .gdb_history *.lst *.debug *.o
+	del /f *.o *.elf *.lst *.debug *.hex *.bin 2>nul || true

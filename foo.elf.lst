@@ -8,29 +8,29 @@ Disassembly of section .text:
  8000000:	20005000 	andcs	r5, r0, r0
  8000004:	080001d1 	stmdaeq	r0, {r0, r4, r6, r7, r8}
 	...
- 800003c:	0800022d 	stmdaeq	r0, {r0, r2, r3, r5, r9}
+ 800003c:	08000287 	stmdaeq	r0, {r0, r1, r2, r7, r9}
 	...
 
 080001d0 <reset_handler>:
 
-    .section .text
+.section .text
     .align 1
     .type reset_handler, %function
 reset_handler:
     ldr r0, =SYST_CSR
- 80001d0:	481a      	ldr	r0, [pc, #104]	; (800023c <break_here+0x2>)
+ 80001d0:	4832      	ldr	r0, [pc, #200]	@ (800029c <brkp+0x4>)
     ldr r1, =SYST_RVR
- 80001d2:	491b      	ldr	r1, [pc, #108]	; (8000240 <break_here+0x6>)
+ 80001d2:	4933      	ldr	r1, [pc, #204]	@ (80002a0 <brkp+0x8>)
     ldr r2, =SYST_CVR
- 80001d4:	4a1b      	ldr	r2, [pc, #108]	; (8000244 <break_here+0xa>)
+ 80001d4:	4a33      	ldr	r2, [pc, #204]	@ (80002a4 <brkp+0xc>)
     ldr r3, =SYST_TIMEOUT // r3 is temp variable
- 80001d6:	f06f 437f 	mvn.w	r3, #4278190080	; 0xff000000
+ 80001d6:	f06f 437f 	mvn.w	r3, #4278190080	@ 0xff000000
 
     // initially reload with 0x00FFFFFF, treat this as threshold register
     str r3, [r1]
  80001da:	600b      	str	r3, [r1, #0]
 
-    // load 0 to systick counter register; good practise as default initial value is unknown
+    // load 0 to systick counter register - good practise as default initial value is unknown
     mov r3, #0x0 // write any value to SYST_CVR will reset it to 0
  80001dc:	2300      	movs	r3, #0
     str r3, [r2]
@@ -44,128 +44,302 @@ reset_handler:
 
     mov r5, #0
  80001e4:	2500      	movs	r5, #0
+    mov r6, #0
+ 80001e6:	2600      	movs	r6, #0
 
     // GPIO Config start
     // RCC->APB2ENR i.e. - 0x40021018
     ldr r0, =0x40021018     // Load the address 0x40021018 into R0
- 80001e6:	4818      	ldr	r0, [pc, #96]	; (8000248 <break_here+0xe>)
+ 80001e8:	482f      	ldr	r0, [pc, #188]	@ (80002a8 <brkp+0x10>)
     ldr r1, [r0]            // Load the value at the address in R0 into R1
- 80001e8:	6801      	ldr	r1, [r0, #0]
-    mov r4, #1              // temp = 1 to be shifted
- 80001ea:	2401      	movs	r4, #1
+ 80001ea:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1              // temp register r4 = 1 to be shifted
+ 80001ec:	2401      	movs	r4, #1
     lsl r4, r4, #4          // r4 = r3 << 4 as IOPCEN = bit 4
- 80001ec:	0124      	lsls	r4, r4, #4
+ 80001ee:	0124      	lsls	r4, r4, #4
     orr r1, r1, r4          // R1 = R1 | 0x02
- 80001ee:	4321      	orrs	r1, r4
+ 80001f0:	4321      	orrs	r1, r4
     str r1, [r0]            // Store modified register value to r0 i.e. - 0x40023830
- 80001f0:	6001      	str	r1, [r0, #0]
+ 80001f2:	6001      	str	r1, [r0, #0]
 
     // configure GPIOC_CRH for PC13
     // set mode13 b1 = 1
     ldr r0, =0x40011004
- 80001f2:	4816      	ldr	r0, [pc, #88]	; (800024c <break_here+0x12>)
+ 80001f4:	482d      	ldr	r0, [pc, #180]	@ (80002ac <brkp+0x14>)
     ldr r1, [r0]
- 80001f4:	6801      	ldr	r1, [r0, #0]
+ 80001f6:	6801      	ldr	r1, [r0, #0]
     mov r4, #1
- 80001f6:	2401      	movs	r4, #1
+ 80001f8:	2401      	movs	r4, #1
     lsl r4, r4, #21
- 80001f8:	0564      	lsls	r4, r4, #21
+ 80001fa:	0564      	lsls	r4, r4, #21
     orr r1, r1, r4
- 80001fa:	4321      	orrs	r1, r4
-    str r1, [r0]
- 80001fc:	6001      	str	r1, [r0, #0]
+ 80001fc:	4321      	orrs	r1, r4
 
     // set mode13 b0 = 0
-    ldr r0, =0x40011004
- 80001fe:	4813      	ldr	r0, [pc, #76]	; (800024c <break_here+0x12>)
-    ldr r1, [r0]
- 8000200:	6801      	ldr	r1, [r0, #0]
     mov r4, #1
- 8000202:	2401      	movs	r4, #1
+ 80001fe:	2401      	movs	r4, #1
     lsl r4, r4, #20
- 8000204:	0524      	lsls	r4, r4, #20
+ 8000200:	0524      	lsls	r4, r4, #20
     mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
- 8000206:	43e4      	mvns	r4, r4
+ 8000202:	43e4      	mvns	r4, r4
     and r1, r1, r4          // r1 = R1 & r4
- 8000208:	4021      	ands	r1, r4
-    str r1, [r0]
- 800020a:	6001      	str	r1, [r0, #0]
+ 8000204:	4021      	ands	r1, r4
 
-    // set cnf13 b1 = 0
-    ldr r0, =0x40011004
- 800020c:	480f      	ldr	r0, [pc, #60]	; (800024c <break_here+0x12>)
-    ldr r1, [r0]
- 800020e:	6801      	ldr	r1, [r0, #0]
+    // set cnf13 b1 = 0]
     mov r4, #1
- 8000210:	2401      	movs	r4, #1
+ 8000206:	2401      	movs	r4, #1
     lsl r4, r4, #23
- 8000212:	05e4      	lsls	r4, r4, #23
+ 8000208:	05e4      	lsls	r4, r4, #23
     mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
- 8000214:	43e4      	mvns	r4, r4
-    and r1, r1, r4          // r1 = R1 & r4
- 8000216:	4021      	ands	r1, r4
-    str r1, [r0]
- 8000218:	6001      	str	r1, [r0, #0]
+ 800020a:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4 
+ 800020c:	4021      	ands	r1, r4
 
     // set cnf13 b0 = 0
-    ldr r0, =0x40011004
- 800021a:	480c      	ldr	r0, [pc, #48]	; (800024c <break_here+0x12>)
-    ldr r1, [r0]
- 800021c:	6801      	ldr	r1, [r0, #0]
     mov r4, #1
- 800021e:	2401      	movs	r4, #1
+ 800020e:	2401      	movs	r4, #1
     lsl r4, r4, #22
- 8000220:	05a4      	lsls	r4, r4, #22
+ 8000210:	05a4      	lsls	r4, r4, #22
     mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
- 8000222:	43e4      	mvns	r4, r4
+ 8000212:	43e4      	mvns	r4, r4
     and r1, r1, r4          // r1 = R1 & r4
- 8000224:	4021      	ands	r1, r4
+ 8000214:	4021      	ands	r1, r4
+
     str r1, [r0]
- 8000226:	6001      	str	r1, [r0, #0]
+ 8000216:	6001      	str	r1, [r0, #0]
 
-    bl .
- 8000228:	f7ff fffe 	bl	8000228 <reset_handler+0x58>
 
-0800022c <systick_handler>:
 
-    .section .text
+
+    // RCC->APB2ENR i.e. - 0x40021018
+    ldr r0, =0x40021018     // Load the address 0x40021018 into R0
+ 8000218:	4823      	ldr	r0, [pc, #140]	@ (80002a8 <brkp+0x10>)
+    ldr r1, [r0]            // Load the value at the address in R0 into R1
+ 800021a:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1              // temp register r4 = 1 to be shifted
+ 800021c:	2401      	movs	r4, #1
+    lsl r4, r4, #2          // r4 = r3 << 2 as IOPAEN = bit 2
+ 800021e:	00a4      	lsls	r4, r4, #2
+    orr r1, r1, r4          // R1 = R1 | 0x02
+ 8000220:	4321      	orrs	r1, r4
+    str r1, [r0]            // Store modified register value to r0 i.e. - 0x40023830
+ 8000222:	6001      	str	r1, [r0, #0]
+
+    // configure GPIOC_CRH for PC13
+    // set mode13 b1 = 1
+    ldr r0, =0x40010800
+ 8000224:	4822      	ldr	r0, [pc, #136]	@ (80002b0 <brkp+0x18>)
+    ldr r1, [r0]
+ 8000226:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 8000228:	2401      	movs	r4, #1
+    lsl r4, r4, #21
+ 800022a:	0564      	lsls	r4, r4, #21
+    orr r1, r1, r4
+ 800022c:	4321      	orrs	r1, r4
+
+    // set mode13 b0 = 0
+    mov r4, #1
+ 800022e:	2401      	movs	r4, #1
+    lsl r4, r4, #20
+ 8000230:	0524      	lsls	r4, r4, #20
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 8000232:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4
+ 8000234:	4021      	ands	r1, r4
+
+    // set cnf13 b1 = 0]
+    mov r4, #1
+ 8000236:	2401      	movs	r4, #1
+    lsl r4, r4, #23
+ 8000238:	05e4      	lsls	r4, r4, #23
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 800023a:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4 
+ 800023c:	4021      	ands	r1, r4
+
+    // set cnf13 b0 = 0
+    mov r4, #1
+ 800023e:	2401      	movs	r4, #1
+    lsl r4, r4, #22
+ 8000240:	05a4      	lsls	r4, r4, #22
+    mvn r4, r4              // r4 = ~r4 (Complement r4 and store in r4)
+ 8000242:	43e4      	mvns	r4, r4
+    and r1, r1, r4          // r1 = R1 & r4
+ 8000244:	4021      	ands	r1, r4
+
+    str r1, [r0]
+ 8000246:	6001      	str	r1, [r0, #0]
+
+08000248 <head>:
+    // 0x20001100   task_a stack frame
+    // 0x20001200   task_b stack frame
+
+head:
+    // Set data value of node A
+    ldr r0, =task_a         //@ Load the address of 'task_a' into R0
+ 8000248:	481a      	ldr	r0, [pc, #104]	@ (80002b4 <brkp+0x1c>)
+    ldr r1, =0x20001000     // load address of node A into r1
+ 800024a:	491b      	ldr	r1, [pc, #108]	@ (80002b8 <brkp+0x20>)
+    str r0, [r1]            //@ Store the address of 'task_a' at 0x30000100
+ 800024c:	6008      	str	r0, [r1, #0]
+    
+    // next pointer of node A
+    ldr r0, =0x20001004 // here to be stored
+ 800024e:	481b      	ldr	r0, [pc, #108]	@ (80002bc <brkp+0x24>)
+    ldr r1, =0x20001008 // this to be stored
+ 8000250:	491b      	ldr	r1, [pc, #108]	@ (80002c0 <brkp+0x28>)
+    str r1, [r0]
+ 8000252:	6001      	str	r1, [r0, #0]
+    
+    // Set data value of node B    
+    ldr r0, =task_b  //@ Load the address of 'task_a' into R0
+ 8000254:	481b      	ldr	r0, [pc, #108]	@ (80002c4 <brkp+0x2c>)
+    ldr r1, =0x20001008
+ 8000256:	491a      	ldr	r1, [pc, #104]	@ (80002c0 <brkp+0x28>)
+    str r0, [r1]     //@ Store the address of 'task_a' at 0x30000100
+ 8000258:	6008      	str	r0, [r1, #0]
+    
+    // next pointer of node B
+    ldr r0, =0x2000100c // here to be stored
+ 800025a:	481b      	ldr	r0, [pc, #108]	@ (80002c8 <brkp+0x30>)
+    ldr r1, =0x20001000 // this to be stored
+ 800025c:	4916      	ldr	r1, [pc, #88]	@ (80002b8 <brkp+0x20>)
+    str r1, [r0]
+ 800025e:	6001      	str	r1, [r0, #0]
+    
+    // Set head pointer to node A
+    ldr r0, =0x20001010
+ 8000260:	481a      	ldr	r0, [pc, #104]	@ (80002cc <brkp+0x34>)
+    ldr r1, =0x20001000 // address of node A
+ 8000262:	4915      	ldr	r1, [pc, #84]	@ (80002b8 <brkp+0x20>)
+    str r1, [r0]
+ 8000264:	6001      	str	r1, [r0, #0]
+
+08000266 <wait_loop>:
+
+
+
+    // bl .
+wait_loop:
+    wfi
+ 8000266:	bf30      	wfi
+    b wait_loop
+ 8000268:	e7fd      	b.n	8000266 <wait_loop>
+
+0800026a <task_a>:
+    .align 1 // 2^1
+    .type task_a, %function
+task_a:
+    // toggle PC13
+    // GPIOC->ODR |= (1U << 13)  // 0x4001100C
+    ldr r0, =0x4001100C
+ 800026a:	4819      	ldr	r0, [pc, #100]	@ (80002d0 <brkp+0x38>)
+    ldr r1, [r0]
+ 800026c:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 800026e:	2401      	movs	r4, #1
+    lsl r4, r4, #13
+ 8000270:	0364      	lsls	r4, r4, #13
+    eor r1, r1, r4          // R1 = R1 ^ r4
+ 8000272:	4061      	eors	r1, r4
+    str r1, [r0]
+ 8000274:	6001      	str	r1, [r0, #0]
+
+    bx lr
+ 8000276:	4770      	bx	lr
+
+08000278 <task_b>:
+    .align 1 // 2^1
+    .type task_b, %function
+task_b:
+    // toggle PA5
+    // GPIOC->ODR |= (1U << 5)  // 0x4001100C
+    ldr r0, =0x4001080C
+ 8000278:	4816      	ldr	r0, [pc, #88]	@ (80002d4 <brkp+0x3c>)
+    ldr r1, [r0]
+ 800027a:	6801      	ldr	r1, [r0, #0]
+    mov r4, #1
+ 800027c:	2401      	movs	r4, #1
+    lsl r4, r4, #5
+ 800027e:	0164      	lsls	r4, r4, #5
+    eor r1, r1, r4          // R1 = R1 ^ r4
+ 8000280:	4061      	eors	r1, r4
+    str r1, [r0]    
+ 8000282:	6001      	str	r1, [r0, #0]
+
+    bx lr
+ 8000284:	4770      	bx	lr
+
+08000286 <systick_handler>:
+
+    // .section .text
     .align 1 // 2^1
     .type systick_handler, %function
 systick_handler:
+    push {r5, lr}
+ 8000286:	b520      	push	{r5, lr}
     add r5, r5, #1
- 800022c:	3501      	adds	r5, #1
+ 8000288:	3501      	adds	r5, #1
 
-    // GPIOC->ODR |= (1U << 13);  // 0x4001100C
-    ldr r0, =0x4001100C
- 800022e:	4808      	ldr	r0, [pc, #32]	; (8000250 <break_here+0x16>)
+
+    ldr r0, =0x20001010
+ 800028a:	4810      	ldr	r0, [pc, #64]	@ (80002cc <brkp+0x34>)
+    ldr r1, [r0]        // load head pointer (address of node A) into r1            i.e. r1 = 0x20001000
+ 800028c:	6801      	ldr	r1, [r0, #0]
+    ldr r1, [r1, #4]    // load next pointer of node A (node B) into r1             i.e. r1 = 0x20001004
+ 800028e:	6849      	ldr	r1, [r1, #4]
+    str r1, [r0]        // update head pointer to node B (0x20001008)
+ 8000290:	6001      	str	r1, [r0, #0]
+
+    ldr r0, [r0]
+ 8000292:	6800      	ldr	r0, [r0, #0]
     ldr r1, [r0]
- 8000230:	6801      	ldr	r1, [r0, #0]
-    mov r4, #1
- 8000232:	2401      	movs	r4, #1
-    lsl r4, r4, #13
- 8000234:	0364      	lsls	r4, r4, #13
-    eor r1, r1, r4          // R1 = R1 ^ r4
- 8000236:	4061      	eors	r1, r4
-    str r1, [r0]
- 8000238:	6001      	str	r1, [r0, #0]
+ 8000294:	6801      	ldr	r1, [r0, #0]
+    blx r1 // call the function pointed to by the head pointer (initially node A)
+ 8000296:	4788      	blx	r1
 
-0800023a <break_here>:
+08000298 <brkp>:
 
-break_here:
+
+brkp:
+    @ bl task_a
+    @ bl task_b
+    pop {r5, pc}
+ 8000298:	bd20      	pop	{r5, pc}
+
     bx lr
- 800023a:	4770      	bx	lr
+ 800029a:	4770      	bx	lr
     ldr r0, =SYST_CSR
- 800023c:	e000e010 	and	lr, r0, r0, lsl r0
+ 800029c:	e000e010 	and	lr, r0, r0, lsl r0
     ldr r1, =SYST_RVR
- 8000240:	e000e014 	and	lr, r0, r4, lsl r0
+ 80002a0:	e000e014 	and	lr, r0, r4, lsl r0
     ldr r2, =SYST_CVR
- 8000244:	e000e018 	and	lr, r0, r8, lsl r0
+ 80002a4:	e000e018 	and	lr, r0, r8, lsl r0
     ldr r0, =0x40021018     // Load the address 0x40021018 into R0
- 8000248:	40021018 	andmi	r1, r2, r8, lsl r0
+ 80002a8:	40021018 	andmi	r1, r2, r8, lsl r0
     ldr r0, =0x40011004
- 800024c:	40011004 	andmi	r1, r1, r4
+ 80002ac:	40011004 	andmi	r1, r1, r4
+    ldr r0, =0x40010800
+ 80002b0:	40010800 	andmi	r0, r1, r0, lsl #16
+    ldr r0, =task_a         //@ Load the address of 'task_a' into R0
+ 80002b4:	0800026b 	stmdaeq	r0, {r0, r1, r3, r5, r6, r9}
+    ldr r1, =0x20001000     // load address of node A into r1
+ 80002b8:	20001000 	andcs	r1, r0, r0
+    ldr r0, =0x20001004 // here to be stored
+ 80002bc:	20001004 	andcs	r1, r0, r4
+    ldr r1, =0x20001008 // this to be stored
+ 80002c0:	20001008 	andcs	r1, r0, r8
+    ldr r0, =task_b  //@ Load the address of 'task_a' into R0
+ 80002c4:	08000279 	stmdaeq	r0, {r0, r3, r4, r5, r6, r9}
+    ldr r0, =0x2000100c // here to be stored
+ 80002c8:	2000100c 	andcs	r1, r0, ip
+    ldr r0, =0x20001010
+ 80002cc:	20001010 	andcs	r1, r0, r0, lsl r0
     ldr r0, =0x4001100C
- 8000250:	4001100c 	andmi	r1, r1, ip
+ 80002d0:	4001100c 	andmi	r1, r1, ip
+    ldr r0, =0x4001080C
+ 80002d4:	4001080c 	andmi	r0, r1, ip, lsl #16
 
 Disassembly of section .ARM.attributes:
 
@@ -174,47 +348,63 @@ Disassembly of section .ARM.attributes:
    4:	61656100 	cmnvs	r5, r0, lsl #2
    8:	01006962 	tsteq	r0, r2, ror #18
    c:	00000016 	andeq	r0, r0, r6, lsl r0
-  10:	726f4305 	rsbvc	r4, pc, #335544320	; 0x14000000
-  14:	2d786574 	cfldr64cs	mvdx6, [r8, #-464]!	; 0xfffffe30
+  10:	726f4305 	rsbvc	r4, pc, #335544320	@ 0x14000000
+  14:	2d786574 	ldclcs	5, cr6, [r8, #-464]!	@ 0xfffffe30
   18:	0600334d 	streq	r3, [r0], -sp, asr #6
   1c:	094d070a 	stmdbeq	sp, {r1, r3, r8, r9, sl}^
-  20:	Address 0x0000000000000020 is out of bounds.
+  20:	Address 0x20 is out of bounds.
 
 
 Disassembly of section .debug_line:
 
 00000000 <.debug_line>:
-   0:	00000073 	andeq	r0, r0, r3, ror r0
-   4:	001c0003 	andseq	r0, ip, r3
+   0:	000000b8 	strheq	r0, [r0], -r8
+   4:	00190002 	andseq	r0, r9, r2
    8:	01020000 	mrseq	r0, (UNDEF: 2)
-   c:	000d0efb 	strdeq	r0, [sp], -fp
+   c:	000a0efb 	strdeq	r0, [sl], -fp
   10:	01010101 	tsteq	r1, r1, lsl #2
   14:	01000000 	mrseq	r0, (UNDEF: 0)
-  18:	00010000 	andeq	r0, r1, r0
-  1c:	2e6f6f66 	cdpcs	15, 6, cr6, cr15, cr6, {3}
-  20:	00000053 	andeq	r0, r0, r3, asr r0
-  24:	05000000 	streq	r0, [r0, #-0]
-  28:	0001d002 	andeq	sp, r1, r2
-  2c:	01140308 	tsteq	r4, r8, lsl #6
-  30:	31212121 			; <UNDEFINED> instruction: 0x31212121
-  34:	21232123 			; <UNDEFINED> instruction: 0x21232123
-  38:	21212422 			; <UNDEFINED> instruction: 0x21212422
-  3c:	24212121 	strtcs	r2, [r1], #-289	; 0xfffffedf
-  40:	21212121 			; <UNDEFINED> instruction: 0x21212121
-  44:	21212321 			; <UNDEFINED> instruction: 0x21212321
-  48:	21212121 			; <UNDEFINED> instruction: 0x21212121
-  4c:	21212123 			; <UNDEFINED> instruction: 0x21212123
-  50:	23212121 			; <UNDEFINED> instruction: 0x23212121
-  54:	21212121 			; <UNDEFINED> instruction: 0x21212121
-  58:	34222121 	strtcc	r2, [r2], #-289	; 0xfffffedf
-  5c:	21212123 			; <UNDEFINED> instruction: 0x21212123
-  60:	03232121 			; <UNDEFINED> instruction: 0x03232121
-  64:	2f207fb0 	svccs	0x00207fb0
-  68:	2e12032f 	cdpcs	3, 1, cr0, cr2, cr15, {1}
-  6c:	032e0903 			; <UNDEFINED> instruction: 0x032e0903
-  70:	02022e2b 	andeq	r2, r2, #688	; 0x2b0
-  74:	Address 0x0000000000000074 is out of bounds.
-
+  18:	6f6f6600 	svcvs	0x006f6600
+  1c:	0000532e 	andeq	r5, r0, lr, lsr #6
+  20:	00000000 	andeq	r0, r0, r0
+  24:	01d00205 	bicseq	r0, r0, r5, lsl #4
+  28:	14030800 	strne	r0, [r3], #-2048	@ 0xfffff800
+  2c:	1e1e1e01 	cdpne	14, 1, cr1, cr14, cr1, {0}
+  30:	201e202e 	andscs	r2, lr, lr, lsr #32
+  34:	211e1f1e 	tstcs	lr, lr, lsl pc
+  38:	1e1e1e1e 	mrcne	14, 0, r1, cr14, cr14, {0}
+  3c:	1e1e211e 	mrcne	1, 0, r2, cr14, cr14, {0}
+  40:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  44:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  48:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  4c:	241f1e1e 	ldrcs	r1, [pc], #-3614	@ 54 <SYST_TIMEOUT-0xffffab>
+  50:	1e1e1e1e 	mrcne	14, 0, r1, cr14, cr14, {0}
+  54:	1e1e211e 	mrcne	1, 0, r2, cr14, cr14, {0}
+  58:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  5c:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  60:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  64:	031f1e1e 	tsteq	pc, #480	@ 0x1e0
+  68:	1e1e1d0b 	cdpne	13, 1, cr1, cr14, cr11, {0}
+  6c:	201e1e20 	andscs	r1, lr, r0, lsr #28
+  70:	1e201e1e 	mcrne	14, 1, r1, cr0, cr14, {0}
+  74:	1e1e201e 	mrcne	0, 0, r2, cr14, cr14, {0}
+  78:	09031e25 	stmdbeq	r3, {r0, r2, r5, r9, sl, fp, ip}
+  7c:	1e1e1e1d 	mrcne	14, 0, r1, cr14, cr13, {0}
+  80:	031f1e1e 	tsteq	pc, #480	@ 0x1e0
+  84:	1e1e1d09 	cdpne	13, 1, cr1, cr14, cr9, {0}
+  88:	1f1e1e1e 	svcne	0x001e1e1e
+  8c:	1e201e24 	cdpne	14, 2, cr1, cr0, cr4, {1}
+  90:	1e1f1e1e 	mrcne	14, 0, r1, cr15, cr14, {0}
+  94:	1d0c031e 	stcne	3, cr0, [ip, #-120]	@ 0xffffff88
+  98:	7eb8031f 	mrcvc	3, 5, r0, cr8, cr15, {0}
+  9c:	032c2c1d 			@ <UNDEFINED> instruction: 0x032c2c1d
+  a0:	09032b13 	stmdbeq	r3, {r0, r1, r4, r8, r9, fp, sp}
+  a4:	2b28032b 	blcs	a00d58 <SYST_TIMEOUT-0x5ff2a7>
+  a8:	2c2b2303 	stccs	3, cr2, [fp], #-12
+  ac:	302f2c2f 	eorcc	r2, pc, pc, lsr #24
+  b0:	2b140330 	blcs	500d78 <SYST_TIMEOUT-0xaff287>
+  b4:	022b1003 	eoreq	r1, fp, #3
+  b8:	01010002 	tsteq	r1, r2
 
 Disassembly of section .debug_info:
 
@@ -224,20 +414,20 @@ Disassembly of section .debug_info:
    8:	01040000 	mrseq	r0, (UNDEF: 4)
    c:	00000000 	andeq	r0, r0, r0
   10:	080001d0 	stmdaeq	r0, {r4, r6, r7, r8}
-  14:	08000254 	stmdaeq	r0, {r2, r4, r6, r9}
+  14:	080002d8 	stmdaeq	r0, {r3, r4, r6, r7, r9}
   18:	00000000 	andeq	r0, r0, r0
   1c:	00000006 	andeq	r0, r0, r6
-  20:	00000021 	andeq	r0, r0, r1, lsr #32
-  24:	Address 0x0000000000000024 is out of bounds.
+  20:	00000033 	andeq	r0, r0, r3, lsr r0
+  24:	Address 0x24 is out of bounds.
 
 
 Disassembly of section .debug_abbrev:
 
 00000000 <.debug_abbrev>:
    0:	10001101 	andne	r1, r0, r1, lsl #2
-   4:	12011106 	andne	r1, r1, #-2147483647	; 0x80000001
+   4:	12011106 	andne	r1, r1, #-2147483647	@ 0x80000001
    8:	1b0e0301 	blne	380c14 <SYST_TIMEOUT-0xc7f3eb>
-   c:	130e250e 	movwne	r2, #58638	; 0xe50e
+   c:	130e250e 	movwne	r2, #58638	@ 0xe50e
   10:	00000005 	andeq	r0, r0, r5
 
 Disassembly of section .debug_aranges:
@@ -248,21 +438,26 @@ Disassembly of section .debug_aranges:
    8:	00040000 	andeq	r0, r4, r0
    c:	00000000 	andeq	r0, r0, r0
   10:	080001d0 	stmdaeq	r0, {r4, r6, r7, r8}
-  14:	00000084 	andeq	r0, r0, r4, lsl #1
+  14:	00000108 	andeq	r0, r0, r8, lsl #2
 	...
 
 Disassembly of section .debug_str:
 
 00000000 <.debug_str>:
    0:	2e6f6f66 	cdpcs	15, 6, cr6, cr15, cr6, {3}
-   4:	772f0053 			; <UNDEFINED> instruction: 0x772f0053
-   8:	736b726f 	cmnvc	fp, #-268435450	; 0xf0000006
-   c:	65636170 	strbvs	r6, [r3, #-368]!	; 0xfffffe90
-  10:	72612f73 	rsbvc	r2, r1, #460	; 0x1cc
-  14:	2d6d2d6d 	stclcs	13, cr2, [sp, #-436]!	; 0xfffffe4c
-  18:	65737361 	ldrbvs	r7, [r3, #-865]!	; 0xfffffc9f
-  1c:	796c626d 	stmdbvc	ip!, {r0, r2, r3, r5, r6, r9, sp, lr}^
-  20:	554e4700 	strbpl	r4, [lr, #-1792]	; 0xfffff900
-  24:	20534120 	subscs	r4, r3, r0, lsr #2
-  28:	38332e32 	ldmdacc	r3!, {r1, r4, r5, r9, sl, fp, sp}
+   4:	3a440053 	bcc	1100158 <SYST_TIMEOUT+0x100159>
+   8:	6175515c 	cmnvs	r5, ip, asr r1
+   c:	6d6f636c 	stclvs	3, cr6, [pc, #-432]!	@ fffffe64 <SYST_CVR+0x1fff1e4c>
+  10:	72505f6d 	subsvc	r5, r0, #436	@ 0x1b4
+  14:	615c7065 	cmpvs	ip, r5, rrx
+  18:	632d6d72 			@ <UNDEFINED> instruction: 0x632d6d72
+  1c:	6574726f 	ldrbvs	r7, [r4, #-623]!	@ 0xfffffd91
+  20:	5c6d2d78 	stclpl	13, cr2, [sp], #-480	@ 0xfffffe20
+  24:	2d6d7261 	stclcs	2, cr7, [sp, #-388]!	@ 0xfffffe7c
+  28:	73612d6d 	cmnvc	r1, #6976	@ 0x1b40
+  2c:	626d6573 	rsbvs	r6, sp, #482344960	@ 0x1cc00000
+  30:	4700796c 	strmi	r7, [r0, -ip, ror #18]
+  34:	4120554e 			@ <UNDEFINED> instruction: 0x4120554e
+  38:	2e322053 	mrccs	0, 1, r2, cr2, cr3, {2}
+  3c:	302e3634 	eorcc	r3, lr, r4, lsr r6
 	...

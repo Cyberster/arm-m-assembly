@@ -26,7 +26,7 @@ SECTIONS
     } > FLASH
 } */
 
-/* Claud stm32f103 bluepill*/
+/* Claud stm32f103 bluepill stm32f103c8t6 */
 MEMORY
 {
     FLASH : ORIGIN = 0x08000000, LENGTH = 64K
